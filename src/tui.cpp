@@ -119,7 +119,9 @@ Element TUI::renderCPUStats() const {
     
     const int bar_width = 30;
     const int filled = static_cast<int>((cpu_usage / 100.0) * bar_width);
-    const std::string bar = std::string(filled, '█') + std::string(bar_width - filled, '░');
+    const std::string filled_str(filled, '=');
+    const std::string empty_str(bar_width - filled, '-');
+    const std::string bar = filled_str + empty_str;
     
     double user_percent = 0.0;
     double system_percent = 0.0;
@@ -144,9 +146,11 @@ Element TUI::renderMemoryStats() const {
         mem_stats = monitor_->getMemoryStats();
     }
     
-    int bar_width = 30;
-    int filled = static_cast<int>((mem_stats.percent_used / 100.0) * bar_width);
-    std::string bar = std::string(filled, '█') + std::string(bar_width - filled, '░');
+    const int bar_width = 30;
+    const int filled = static_cast<int>((mem_stats.percent_used / 100.0) * bar_width);
+    const std::string filled_str(filled, '=');
+    const std::string empty_str(bar_width - filled, '-');
+    const std::string bar = filled_str + empty_str;
     
     Color bar_color = mem_stats.percent_used > 80 ? Color::Red : 
                       mem_stats.percent_used > 60 ? Color::Yellow : Color::Green;
