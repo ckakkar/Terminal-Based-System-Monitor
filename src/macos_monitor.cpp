@@ -147,12 +147,12 @@ ProcessInfo parseProcessInfo(int pid) {
             default: proc.state = "?"; break;
         }
         
-        struct proc_taskinfo task_info;
-        int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &task_info, sizeof(task_info));
-        if (ret == sizeof(task_info)) {
-            proc.virtual_memory = task_info.pti_virtual_size;
-            proc.resident_memory = task_info.pti_resident_size;
-            proc.memory_bytes = task_info.pti_resident_size;
+        struct proc_taskinfo proc_info;
+        int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &proc_info, sizeof(proc_info));
+        if (ret == sizeof(proc_info)) {
+            proc.virtual_memory = proc_info.pti_virtual_size;
+            proc.resident_memory = proc_info.pti_resident_size;
+            proc.memory_bytes = proc_info.pti_resident_size;
         } else {
             task_t task;
             if (task_for_pid(mach_task_self(), pid, &task) == KERN_SUCCESS) {
