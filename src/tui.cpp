@@ -19,13 +19,9 @@ TUI::TUI()
       selected_process_index_(0),
       show_help_(false) {
     
-    // Initialize search input
     search_input_ = Input(&search_query_, "Search processes...");
-    
-    // Start update thread
     update_thread_ = std::thread(&TUI::updateLoop, this);
     
-    // Create main renderer
     auto main_renderer = Renderer([this] {
         if (show_help_) {
             return renderHelp();
@@ -40,10 +36,7 @@ TUI::TUI()
                 renderMemoryStats() | flex
             }),
             separator(),
-            hbox({
-                text("Search: "),
-                search_input_->Render()
-            }),
+            hbox({ text("Search: "), search_input_->Render() }),
             separator(),
             renderProcessList(),
             separator(),
@@ -51,7 +44,6 @@ TUI::TUI()
         });
     });
     
-    // Create component container
     auto component = Container::Vertical({
         search_input_,
         main_renderer
@@ -79,13 +71,11 @@ void TUI::updateLoop() {
     while (running_) {
         monitor_->update();
         
-        // Update process manager
         auto processes = monitor_->getProcesses();
-        
-        // Calculate memory percentages
         auto memory_stats = monitor_->getMemoryStats();
-        for (auto& proc : processes) {
-            if (memory_stats.total > 0) {
+        
+        if (memory_stats.total > 0) {
+            for (auto& proc : processes) {
                 proc.memory_percent = (static_cast<double>(proc.memory_bytes) / memory_stats.total) * 100.0;
             }
         }
@@ -95,9 +85,7 @@ void TUI::updateLoop() {
             process_manager_->setProcesses(processes);
         }
         
-        // Request screen refresh
         screen_.PostEvent(Event::Custom);
-        
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
@@ -129,14 +117,13 @@ Element TUI::renderCPUStats() const {
         cpu_usage = monitor_->getCPUUsage();
     }
     
-    // Create a simple bar graph
-    int bar_width = 30;
-    int filled = static_cast<int>((cpu_usage / 100.0) * bar_width);
-    std::string bar = std::string(filled, '█') + std::string(bar_width - filled, '░');
+    const int bar_width = 30;
+    const int filled = static_cast<int>((cpu_usage / 100.0) * bar_width);
+    const std::string bar = std::string(filled, '█') + std::string(bar_width - filled, '░');
     
     double user_percent = 0.0;
     double system_percent = 0.0;
-    if (cpu_stats.total > 0) {
+    if (cpu_stats.total > 0.0) {
         user_percent = (cpu_stats.user / cpu_stats.total) * 100.0;
         system_percent = (cpu_stats.system / cpu_stats.total) * 100.0;
     }
@@ -181,28 +168,36 @@ Element TUI::renderProcessList() const {
         processes = process_manager_->getProcesses();
     }
     
-    // Filter processes if search query exists
     if (!search_query_.empty()) {
         processes = process_manager_->filterProcesses(processes, search_query_);
     }
     
-    // Limit to top 20 processes
-    if (processes.size() > 20) {
-        processes.resize(20);
+    constexpr size_t max_processes = 20;
+    if (processes.size() > max_processes) {
+        processes.resize(max_processes);
     }
     
-    // Create table
     std::vector<std::vector<std::string>> table_data;
     table_data.push_back({"PID", "Name", "CPU%", "Memory%", "Memory", "User", "State"});
     
     for (const auto& proc : processes) {
+        std::string name = proc.name;
+        if (name.length() > 30) {
+            name = name.substr(0, 27) + "...";
+        }
+        
+        std::string user = proc.user;
+        if (user.length() > 10) {
+            user = user.substr(0, 7) + "...";
+        }
+        
         table_data.push_back({
             std::to_string(proc.pid),
-            proc.name.length() > 30 ? proc.name.substr(0, 27) + "..." : proc.name,
+            name,
             formatPercent(proc.cpu_percent),
             formatPercent(proc.memory_percent),
             formatBytes(proc.memory_bytes),
-            proc.user.length() > 10 ? proc.user.substr(0, 7) + "..." : proc.user,
+            user,
             proc.state
         });
     }
@@ -258,11 +253,6 @@ bool TUI::onEvent(Event event) {
         running_ = false;
         screen_.Exit();
         return true;
-    }
-    
-    if (event == Event::Character('/')) {
-        // Focus search input
-        return false; // Let input handle it
     }
     
     return false;

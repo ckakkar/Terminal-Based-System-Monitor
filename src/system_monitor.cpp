@@ -50,10 +50,12 @@ void SystemMonitor::updateProcesses() {
     processes_ = LinuxMonitor::parseProcesses();
 #endif
     
-    // Sort by CPU usage by default
     std::sort(processes_.begin(), processes_.end(),
               [](const ProcessInfo& a, const ProcessInfo& b) {
-                  return a.cpu_percent > b.cpu_percent;
+                  if (std::abs(a.cpu_percent - b.cpu_percent) > 0.01) {
+                      return a.cpu_percent > b.cpu_percent;
+                  }
+                  return a.memory_percent > b.memory_percent;
               });
 }
 

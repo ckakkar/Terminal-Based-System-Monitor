@@ -25,32 +25,24 @@ private:
     std::thread update_thread_;
     mutable std::mutex data_mutex_;
     
-    // UI state
     std::string search_query_;
     std::string sort_mode_;
     int selected_process_index_;
     bool show_help_;
     
-    // Components
     ftxui::Component search_input_;
     ftxui::Component process_list_;
     ftxui::Component main_container_;
     
-    // Update loop
     void updateLoop();
-    
-    // Render functions
     ftxui::Element renderHeader() const;
     ftxui::Element renderCPUStats() const;
     ftxui::Element renderMemoryStats() const;
     ftxui::Element renderProcessList() const;
     ftxui::Element renderFooter() const;
     ftxui::Element renderHelp() const;
-    
-    // Event handlers
     bool onEvent(ftxui::Event event);
     
-    // Format helpers
     std::string formatBytes(uint64_t bytes) const;
     std::string formatPercent(double percent) const;
     std::string formatTime(uint64_t seconds) const;

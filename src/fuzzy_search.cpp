@@ -1,35 +1,32 @@
 #include "fuzzy_search.hpp"
 #include <algorithm>
 #include <cctype>
+#include <vector>
 
 int FuzzySearch::levenshteinDistance(const std::string& s1, const std::string& s2) {
-    const size_t len1 = s1.size();
-    const size_t len2 = s2.size();
+    const size_t m = s1.size();
+    const size_t n = s2.size();
     
-    if (len1 == 0) return len2;
-    if (len2 == 0) return len1;
+    if (m == 0) return static_cast<int>(n);
+    if (n == 0) return static_cast<int>(m);
     
-    std::vector<std::vector<int>> dp(len1 + 1, std::vector<int>(len2 + 1));
+    std::vector<std::vector<int>> dp(m + 1, std::vector<int>(n + 1));
     
-    for (size_t i = 0; i <= len1; ++i) {
-        dp[i][0] = i;
-    }
-    for (size_t j = 0; j <= len2; ++j) {
-        dp[0][j] = j;
-    }
+    for (size_t i = 0; i <= m; ++i) dp[i][0] = static_cast<int>(i);
+    for (size_t j = 0; j <= n; ++j) dp[0][j] = static_cast<int>(j);
     
-    for (size_t i = 1; i <= len1; ++i) {
-        for (size_t j = 1; j <= len2; ++j) {
+    for (size_t i = 1; i <= m; ++i) {
+        for (size_t j = 1; j <= n; ++j) {
             int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
             dp[i][j] = std::min({
-                dp[i - 1][j] + 1,      // deletion
-                dp[i][j - 1] + 1,      // insertion
-                dp[i - 1][j - 1] + cost // substitution
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost
             });
         }
     }
     
-    return dp[len1][len2];
+    return dp[m][n];
 }
 
 double FuzzySearch::similarity(const std::string& s1, const std::string& s2) {
@@ -48,14 +45,11 @@ bool FuzzySearch::matches(const std::string& text, const std::string& query, dou
     std::string lower_text = toLower(text);
     std::string lower_query = toLower(query);
     
-    // Check for substring match first (exact match)
     if (lower_text.find(lower_query) != std::string::npos) {
         return true;
     }
     
-    // Check fuzzy similarity
-    double sim = similarity(lower_text, lower_query);
-    return sim >= threshold;
+    return similarity(lower_text, lower_query) >= threshold;
 }
 
 double FuzzySearch::getMatchScore(const std::string& text, const std::string& query) {
@@ -64,14 +58,11 @@ double FuzzySearch::getMatchScore(const std::string& text, const std::string& qu
     std::string lower_text = toLower(text);
     std::string lower_query = toLower(query);
     
-    // Exact substring match gets highest score
-    if (lower_text.find(lower_query) != std::string::npos) {
-        size_t pos = lower_text.find(lower_query);
-        // Prefer matches at the beginning
-        return 1.0 + (1.0 / (pos + 1));
+    size_t pos = lower_text.find(lower_query);
+    if (pos != std::string::npos) {
+        return 1.0 + (1.0 / static_cast<double>(pos + 1));
     }
     
-    // Return similarity score
     return similarity(lower_text, lower_query);
 }
 

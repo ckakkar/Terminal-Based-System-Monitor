@@ -166,12 +166,10 @@ ProcessInfo parseProcessInfo(int pid) {
         }
     }
     
-    // Get user name
-    std::string uid_path = "/proc/" + std::to_string(pid) + "/status";
-    std::ifstream uid_file(uid_path);
-    if (uid_file.is_open()) {
+    if (status_file.is_open()) {
+        status_file.seekg(0);
         std::string uid_line;
-        while (std::getline(uid_file, uid_line)) {
+        while (std::getline(status_file, uid_line)) {
             if (uid_line.find("Uid:") == 0) {
                 std::istringstream ss(uid_line);
                 std::string key, uid_str;
@@ -188,9 +186,8 @@ ProcessInfo parseProcessInfo(int pid) {
         }
     }
     
-    // Calculate CPU and memory percentages (simplified - would need history for accurate CPU)
-    proc.cpu_percent = 0.0; // Would need previous values to calculate
-    proc.memory_percent = 0.0; // Would need total memory
+    proc.cpu_percent = 0.0;
+    proc.memory_percent = 0.0;
     
     return proc;
 }

@@ -10,18 +10,14 @@ target_link_libraries(tests PRIVATE
     GTest::gmock
 )
 
-# Link against the main library if we make it a library
-# For now, we'll include the source files directly
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
-# Add source files from main project
 target_sources(tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/fuzzy_search.cpp
     ${CMAKE_SOURCE_DIR}/src/process_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/system_monitor.cpp
 )
 
-# Platform-specific sources
 if(APPLE)
     target_sources(tests PRIVATE ${CMAKE_SOURCE_DIR}/src/macos_monitor.cpp)
 elseif(UNIX)

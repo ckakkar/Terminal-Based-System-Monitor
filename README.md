@@ -1,6 +1,6 @@
-# TBM - Terminal-Based System Monitor
+# TBM
 
-A modern, feature-rich terminal-based system monitor built with C++ and ftxui. TBM provides real-time monitoring of CPU usage, memory consumption, and process statistics with a beautiful text-based user interface.
+A terminal-based system monitor for Linux and macOS. Real-time CPU, memory, and process monitoring with fuzzy search.
 
 ## Features
 
@@ -187,14 +187,9 @@ The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+PRs welcome. Keep it simple.
 
 ## License
 
-This project is open source. Please check the license file for details.
-
-## Acknowledgments
-
-- Built with [ftxui](https://github.com/ArthurSonzogni/FTXUI)
-- Inspired by `htop` and other system monitoring tools
+MIT
 

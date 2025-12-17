@@ -47,18 +47,12 @@ public:
     SystemMonitor();
     ~SystemMonitor();
     
-    // Update all system statistics
     void update();
     
-    // Getters
     const CPUStats& getCPUStats() const { return cpu_stats_; }
     const MemoryStats& getMemoryStats() const { return memory_stats_; }
     const std::vector<ProcessInfo>& getProcesses() const { return processes_; }
-    
-    // Get CPU usage percentage
     double getCPUUsage() const;
-    
-    // Get number of processes
     size_t getProcessCount() const { return processes_.size(); }
     
 private:
