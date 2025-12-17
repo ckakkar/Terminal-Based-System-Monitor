@@ -1,4 +1,5 @@
 #include "macos_monitor.hpp"
+#include <string>
 #include <sstream>
 #include <fstream>
 #include <memory>
@@ -129,7 +130,14 @@ ProcessInfo parseProcessInfo(int pid) {
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
     
     if (sysctl(mib, 4, &kp, &size, NULL, 0) == 0 && size > 0) {
-        proc.user = kp.kp_eproc.e_ucred.cr_name;
+        // Get user name from UID
+        uid_t uid = kp.kp_eproc.e_ucred.cr_uid;
+        struct passwd* pw = getpwuid(uid);
+        if (pw) {
+            proc.user = pw->pw_name;
+        } else {
+            proc.user = std::to_string(uid);
+        }
         
         // Get state
         switch (kp.kp_proc.p_stat) {
@@ -141,18 +149,27 @@ ProcessInfo parseProcessInfo(int pid) {
             default: proc.state = "?"; break;
         }
         
-        // Get memory info
-        struct task_basic_info info;
-        mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
-        task_t task;
-        
-        if (task_for_pid(mach_task_self(), pid, &task) == KERN_SUCCESS) {
-            if (task_info(task, TASK_BASIC_INFO, (task_info_t)&info, &count) == KERN_SUCCESS) {
-                proc.virtual_memory = info.virtual_size;
-                proc.resident_memory = info.resident_size;
-                proc.memory_bytes = info.resident_size;
+        // Get memory info using proc_pidinfo (more reliable than task_for_pid)
+        struct proc_taskinfo task_info;
+        int ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &task_info, sizeof(task_info));
+        if (ret == sizeof(task_info)) {
+            proc.virtual_memory = task_info.pti_virtual_size;
+            proc.resident_memory = task_info.pti_resident_size;
+            proc.memory_bytes = task_info.pti_resident_size;
+        } else {
+            // Fallback: try task_for_pid (may require privileges)
+            struct task_basic_info info;
+            mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
+            task_t task;
+            
+            if (task_for_pid(mach_task_self(), pid, &task) == KERN_SUCCESS) {
+                if (task_info(task, TASK_BASIC_INFO, (task_info_t)&info, &count) == KERN_SUCCESS) {
+                    proc.virtual_memory = info.virtual_size;
+                    proc.resident_memory = info.resident_size;
+                    proc.memory_bytes = info.resident_size;
+                }
+                mach_port_deallocate(mach_task_self(), task);
             }
-            mach_port_deallocate(mach_task_self(), task);
         }
     }
     

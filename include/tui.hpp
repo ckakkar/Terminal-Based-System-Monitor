@@ -7,6 +7,7 @@
 #include <memory>
 #include <atomic>
 #include <thread>
+#include <mutex>
 
 class TUI {
 public:
@@ -22,6 +23,7 @@ private:
     
     std::atomic<bool> running_;
     std::thread update_thread_;
+    mutable std::mutex data_mutex_;
     
     // UI state
     std::string search_query_;

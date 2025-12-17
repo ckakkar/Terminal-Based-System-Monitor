@@ -164,6 +164,27 @@ The project includes a GitHub Actions workflow (`.github/workflows/ci.yml`) that
 - Runs the test suite
 - Validates the build on every push and pull request
 
+### Using CI/CD
+
+1. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "Your commit message"
+   ```
+
+2. **Push to GitHub**:
+   ```bash
+   git push origin main
+   ```
+
+3. **View CI results**:
+   - Go to your repository on GitHub
+   - Click the "Actions" tab
+   - See the workflow running in real-time
+   - Green ✅ = success, Red ❌ = failure
+
+**See [CI_CD_GUIDE.md](CI_CD_GUIDE.md) for detailed instructions.**
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

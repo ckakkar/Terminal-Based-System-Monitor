@@ -7,6 +7,7 @@
 #include <sstream>
 #include <chrono>
 #include <thread>
+#include <mutex>
 
 using namespace ftxui;
 
@@ -24,15 +25,8 @@ TUI::TUI()
     // Start update thread
     update_thread_ = std::thread(&TUI::updateLoop, this);
     
-    // Create main container with search input
-    auto search_renderer = Renderer(search_input_, [this] {
-        return hbox({
-            text("Search: "),
-            search_input_->Render()
-        });
-    });
-    
-    auto main_renderer = Renderer([this, search_renderer] {
+    // Create main renderer
+    auto main_renderer = Renderer([this] {
         if (show_help_) {
             return renderHelp();
         }
@@ -46,7 +40,10 @@ TUI::TUI()
                 renderMemoryStats() | flex
             }),
             separator(),
-            search_renderer->Render(),
+            hbox({
+                text("Search: "),
+                search_input_->Render()
+            }),
             separator(),
             renderProcessList(),
             separator(),
@@ -54,6 +51,7 @@ TUI::TUI()
         });
     });
     
+    // Create component container
     auto component = Container::Vertical({
         search_input_,
         main_renderer
@@ -92,7 +90,10 @@ void TUI::updateLoop() {
             }
         }
         
-        process_manager_->setProcesses(processes);
+        {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            process_manager_->setProcesses(processes);
+        }
         
         // Request screen refresh
         screen_.PostEvent(Event::Custom);
@@ -102,37 +103,59 @@ void TUI::updateLoop() {
 }
 
 Element TUI::renderHeader() const {
-    auto cpu_usage = monitor_->getCPUUsage();
+    double cpu_usage;
+    size_t process_count;
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        cpu_usage = monitor_->getCPUUsage();
+        process_count = monitor_->getProcessCount();
+    }
     
     return hbox({
         text("TBM - Terminal-Based Monitor") | bold,
         filler(),
         text("CPU: " + formatPercent(cpu_usage)) | color(Color::Green),
         text(" | "),
-        text("Processes: " + std::to_string(monitor_->getProcessCount())) | color(Color::Cyan)
+        text("Processes: " + std::to_string(process_count)) | color(Color::Cyan)
     }) | border;
 }
 
 Element TUI::renderCPUStats() const {
-    auto cpu_stats = monitor_->getCPUStats();
-    auto cpu_usage = monitor_->getCPUUsage();
+    CPUStats cpu_stats;
+    double cpu_usage;
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        cpu_stats = monitor_->getCPUStats();
+        cpu_usage = monitor_->getCPUUsage();
+    }
     
     // Create a simple bar graph
     int bar_width = 30;
     int filled = static_cast<int>((cpu_usage / 100.0) * bar_width);
     std::string bar = std::string(filled, '█') + std::string(bar_width - filled, '░');
     
+    double user_percent = 0.0;
+    double system_percent = 0.0;
+    if (cpu_stats.total > 0) {
+        user_percent = (cpu_stats.user / cpu_stats.total) * 100.0;
+        system_percent = (cpu_stats.system / cpu_stats.total) * 100.0;
+    }
+    
     return vbox({
         text("CPU Usage") | bold | center,
         text(formatPercent(cpu_usage)) | center | color(Color::Green),
         text(bar) | center,
-        text("User: " + formatPercent(cpu_stats.user / cpu_stats.total * 100.0)) | dim,
-        text("System: " + formatPercent(cpu_stats.system / cpu_stats.total * 100.0)) | dim
+        text("User: " + formatPercent(user_percent)) | dim,
+        text("System: " + formatPercent(system_percent)) | dim
     }) | border;
 }
 
 Element TUI::renderMemoryStats() const {
-    auto mem_stats = monitor_->getMemoryStats();
+    MemoryStats mem_stats;
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        mem_stats = monitor_->getMemoryStats();
+    }
     
     int bar_width = 30;
     int filled = static_cast<int>((mem_stats.percent_used / 100.0) * bar_width);
@@ -152,7 +175,11 @@ Element TUI::renderMemoryStats() const {
 }
 
 Element TUI::renderProcessList() const {
-    auto processes = process_manager_->getProcesses();
+    std::vector<ProcessInfo> processes;
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        processes = process_manager_->getProcesses();
+    }
     
     // Filter processes if search query exists
     if (!search_query_.empty()) {
