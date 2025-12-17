@@ -27,7 +27,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        $VCPKG_ROOT/vcpkg install ftxui gtest --triplet x64-linux
+        $VCPKG_ROOT/vcpkg install --triplet x64-linux
     
     - name: Configure CMake
       run: |
@@ -60,7 +60,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        $VCPKG_ROOT/vcpkg install ftxui gtest --triplet x64-osx
+        $VCPKG_ROOT/vcpkg install --triplet x64-osx
     
     - name: Configure CMake
       run: |

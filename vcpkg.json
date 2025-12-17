@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "description": "Terminal-Based System Monitor",
   "dependencies": [
-    "ftxui",
-    "gtest"
+    {
+      "name": "ftxui"
+    },
+    {
+      "name": "gtest"
+    }
   ]
 }
 
